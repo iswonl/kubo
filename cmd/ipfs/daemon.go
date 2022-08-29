@@ -292,7 +292,7 @@ func daemonFunc(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment
 
 		if !domigrate {
 			fmt.Println("Not running migrations of fs-repo now.")
-			fmt.Println("Please get fs-repo-migrations from https://dist.ipfs.io")
+			fmt.Println("Please get fs-repo-migrations from https://dist.ipfs.tech")
 			return fmt.Errorf("fs-repo requires migration")
 		}
 
@@ -649,6 +649,7 @@ func serveHTTPApi(req *cmds.Request, cctx *oldcmds.Context) (<-chan error, error
 	var opts = []corehttp.ServeOption{
 		corehttp.MetricsCollectionOption("api"),
 		corehttp.MetricsOpenCensusCollectionOption(),
+		corehttp.MetricsOpenCensusDefaultPrometheusRegistry(),
 		corehttp.CheckVersionOption(),
 		corehttp.CommandsOption(*cctx),
 		corehttp.WebUIOption,
@@ -804,6 +805,12 @@ func serveHTTPGateway(req *cmds.Request, cctx *oldcmds.Context) (<-chan error, e
 	node, err := cctx.ConstructNode()
 	if err != nil {
 		return nil, fmt.Errorf("serveHTTPGateway: ConstructNode() failed: %s", err)
+	}
+
+	if len(listeners) > 0 {
+		if err := node.Repo.SetGatewayAddr(listeners[0].Addr()); err != nil {
+			return nil, fmt.Errorf("serveHTTPGateway: SetGatewayAddr() failed: %w", err)
+		}
 	}
 
 	errc := make(chan error)
